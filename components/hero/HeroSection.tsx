@@ -99,6 +99,21 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
   // ── Scroll-driven lighting ────────────────────────────────────
   const lightWarmth = useTransform(scrollYProgress, [0, 0.5, 0.9], [0, 0.3, 0.7]);
   const goldenBloomOpacity = useTransform(scrollYProgress, [0.5, 0.8], [0, 0.35]);
+  const continuationGlowOpacity = useTransform(
+    scrollYProgress,
+    [0, 0.18, 0.45, 0.75, 1],
+    [0.1, 0.14, 0.18, 0.12, 0.05]
+  );
+  const continuationCueOpacity = useTransform(
+    scrollYProgress,
+    [0, 0.16, 0.78, 1],
+    [0.12, 0.09, 0.11, 0.04]
+  );
+  const continuationCueY = useTransform(
+    scrollYProgress,
+    [0, 0.5, 1],
+    noMove ? [0, 0, 0] : [0, -8, -14]
+  );
 
   // ═══════════════════════════════════════════════════════════════
   // SCENE TRANSITIONS — scroll controls scene enter/exit only
@@ -386,6 +401,56 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
               "radial-gradient(ellipse 65% 30% at 50% -1%, rgba(255, 248, 228, 0.45) 0%, transparent 72%)",
           }}
         />
+
+        <motion.div
+          className="absolute inset-x-0 bottom-0 h-[24vh] pointer-events-none z-10"
+          style={{ opacity: continuationGlowOpacity }}
+        >
+          <div
+            className="absolute inset-0"
+            style={{
+              background: [
+                "radial-gradient(ellipse 58% 72% at 50% 118%,",
+                "  rgba(255, 241, 214, 0.42) 0%,",
+                "  rgba(255, 229, 184, 0.16) 28%,",
+                "  rgba(255, 221, 170, 0.06) 48%,",
+                "  transparent 72%",
+                "),",
+                "linear-gradient(to top,",
+                "  rgba(248, 239, 225, 0.26) 0%,",
+                "  rgba(248, 239, 225, 0.08) 24%,",
+                "  transparent 70%",
+                ")",
+              ].join(""),
+            }}
+          />
+        </motion.div>
+
+        <motion.div
+          className="absolute bottom-7 left-1/2 z-20 flex -translate-x-1/2 items-center gap-3 pointer-events-none"
+          style={{ opacity: continuationCueOpacity, y: continuationCueY }}
+          animate={
+            prefersReducedMotion
+              ? undefined
+              : { y: [0, -3, 0], opacity: [0.09, 0.12, 0.09] }
+          }
+          transition={
+            prefersReducedMotion
+              ? undefined
+              : {
+                  duration: 8,
+                  ease: "easeInOut",
+                  repeat: Number.POSITIVE_INFINITY,
+                }
+          }
+          aria-hidden="true"
+        >
+          <div className="h-px w-8 bg-[#EDE2CF]/60" />
+          <div className="relative h-2.5 w-2.5 rotate-45 border border-[#EDE2CF]/65">
+            <div className="absolute inset-[2px] border border-[#F7F0E4]/40" />
+          </div>
+          <div className="h-px w-8 bg-[#EDE2CF]/60" />
+        </motion.div>
 
         {/* ── Camera drift — wraps all text layers ─────────────── */}
         <motion.div
