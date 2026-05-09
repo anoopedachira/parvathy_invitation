@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import {
   motion,
   useScroll,
@@ -62,6 +62,29 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
   const [scene3Active, setScene3Active] = useState(false);
   const [scene4Active, setScene4Active] = useState(false);
 
+  // ── Auto-advance: idle on Scene 1 → gently scroll to Scene 2 ──
+  const [autoAdvanced, setAutoAdvanced] = useState(false);
+  const hasScrolled = useRef(false);
+
+  const autoScroll = useCallback(() => {
+    if (hasScrolled.current || autoAdvanced || !containerRef.current) return;
+    setAutoAdvanced(true);
+    const target = containerRef.current.offsetHeight * 0.08;
+    window.scrollTo({ top: target, behavior: "smooth" });
+  }, [autoAdvanced]);
+
+  // Start 5s idle timer once cover opens
+  useEffect(() => {
+    if (!revealed || autoAdvanced) return;
+    const timer = setTimeout(autoScroll, 5000);
+    const markScrolled = () => { hasScrolled.current = true; };
+    window.addEventListener("scroll", markScrolled, { once: true, passive: true });
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("scroll", markScrolled);
+    };
+  }, [revealed, autoAdvanced, autoScroll]);
+
   // Canvas: 600vh total (reduced from 1200vh)
   // max reachable = (600-100)/600 = 0.833
   const scrollYProgress = useTransform(scrollY, (y) => {
@@ -101,18 +124,47 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
   const goldenBloomOpacity = useTransform(scrollYProgress, [0.5, 0.8], [0, 0.35]);
   const continuationGlowOpacity = useTransform(
     scrollYProgress,
-    [0, 0.18, 0.45, 0.75, 1],
-    [0.1, 0.14, 0.18, 0.12, 0.05]
+    [0, 0.10, 0.30, 0.60, 0.80, 1],
+    [0.25, 0.35, 0.28, 0.32, 0.18, 0.06]
   );
   const continuationCueOpacity = useTransform(
     scrollYProgress,
     [0, 0.16, 0.78, 1],
-    [0.12, 0.09, 0.11, 0.04]
+    [0.18, 0.14, 0.16, 0.04]
   );
   const continuationCueY = useTransform(
     scrollYProgress,
     [0, 0.5, 1],
-    noMove ? [0, 0, 0] : [0, -8, -14]
+    noMove ? [0, 0, 0] : [0, -6, -12]
+  );
+
+  // ── Cinematic spotlights — asymmetric pools that shift per scene ──
+  const spotlightPrimaryPos = useTransform(
+    scrollYProgress,
+    [0, 0.15, 0.42, 0.72, 1],
+    [
+      "radial-gradient(ellipse 38% 55% at 42% 38%, rgba(255, 248, 230, 0.22) 0%, transparent 68%)",
+      "radial-gradient(ellipse 42% 50% at 50% 42%, rgba(255, 245, 220, 0.26) 0%, transparent 65%)",
+      "radial-gradient(ellipse 45% 48% at 48% 45%, rgba(255, 242, 210, 0.28) 0%, transparent 62%)",
+      "radial-gradient(ellipse 40% 52% at 52% 48%, rgba(255, 238, 195, 0.30) 0%, transparent 66%)",
+      "radial-gradient(ellipse 44% 50% at 50% 50%, rgba(255, 235, 185, 0.25) 0%, transparent 70%)",
+    ]
+  );
+  const spotlightSecondaryPos = useTransform(
+    scrollYProgress,
+    [0, 0.20, 0.50, 0.80, 1],
+    [
+      "radial-gradient(ellipse 25% 35% at 72% 28%, rgba(255, 240, 210, 0.10) 0%, transparent 60%)",
+      "radial-gradient(ellipse 28% 32% at 25% 62%, rgba(255, 238, 200, 0.12) 0%, transparent 58%)",
+      "radial-gradient(ellipse 30% 38% at 78% 55%, rgba(255, 235, 190, 0.14) 0%, transparent 55%)",
+      "radial-gradient(ellipse 26% 34% at 30% 42%, rgba(255, 232, 180, 0.16) 0%, transparent 60%)",
+      "radial-gradient(ellipse 28% 36% at 65% 65%, rgba(255, 228, 170, 0.12) 0%, transparent 62%)",
+    ]
+  );
+  const spotlightOpacity = useTransform(
+    scrollYProgress,
+    [0, 0.05, 0.15, 0.80, 1],
+    [0, 0.6, 1, 1, 0.7]
   );
 
   // ═══════════════════════════════════════════════════════════════
@@ -402,54 +454,116 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
           }}
         />
 
+        {/* ── Cinematic Spotlight Layer ──────────────────────── */}
         <motion.div
-          className="absolute inset-x-0 bottom-0 h-[24vh] pointer-events-none z-10"
-          style={{ opacity: continuationGlowOpacity }}
+          className="absolute inset-0 pointer-events-none z-[15]"
+          style={{ opacity: spotlightOpacity }}
         >
+          {/* Primary spotlight — slightly left-of-centre, follows scenes */}
+          <motion.div
+            className="absolute inset-0"
+            style={{ background: spotlightPrimaryPos }}
+            animate={
+              prefersReducedMotion
+                ? undefined
+                : { scale: [1, 1.03, 1], opacity: [0.85, 1, 0.85] }
+            }
+            transition={
+              prefersReducedMotion
+                ? undefined
+                : { duration: 12, ease: "easeInOut", repeat: Number.POSITIVE_INFINITY }
+            }
+          />
+          {/* Secondary accent spotlight — asymmetric, shifts across scenes */}
+          <motion.div
+            className="absolute inset-0"
+            style={{ background: spotlightSecondaryPos }}
+            animate={
+              prefersReducedMotion
+                ? undefined
+                : { scale: [1, 0.97, 1], opacity: [0.7, 1, 0.7] }
+            }
+            transition={
+              prefersReducedMotion
+                ? undefined
+                : { duration: 16, ease: "easeInOut", repeat: Number.POSITIVE_INFINITY }
+            }
+          />
+          {/* Sharp edge highlight — raking light from upper-left */}
           <div
             className="absolute inset-0"
             style={{
               background: [
-                "radial-gradient(ellipse 58% 72% at 50% 118%,",
-                "  rgba(255, 241, 214, 0.42) 0%,",
-                "  rgba(255, 229, 184, 0.16) 28%,",
-                "  rgba(255, 221, 170, 0.06) 48%,",
-                "  transparent 72%",
-                "),",
-                "linear-gradient(to top,",
-                "  rgba(248, 239, 225, 0.26) 0%,",
-                "  rgba(248, 239, 225, 0.08) 24%,",
-                "  transparent 70%",
+                "linear-gradient(148deg,",
+                "  rgba(255, 250, 235, 0.14) 0%,",
+                "  rgba(255, 245, 218, 0.06) 18%,",
+                "  transparent 32%",
                 ")",
               ].join(""),
             }}
           />
         </motion.div>
 
+        {/* ── Bottom-edge continuation glow (boosted 2×) ─────── */}
+        <motion.div
+          className="absolute inset-x-0 bottom-0 h-[28vh] pointer-events-none z-10"
+          style={{ opacity: continuationGlowOpacity }}
+        >
+          <motion.div
+            className="absolute inset-0"
+            animate={
+              prefersReducedMotion
+                ? undefined
+                : { opacity: [0.85, 1, 0.85], y: [0, -4, 0] }
+            }
+            transition={
+              prefersReducedMotion
+                ? undefined
+                : { duration: 6, ease: "easeInOut", repeat: Number.POSITIVE_INFINITY }
+            }
+            style={{
+              background: [
+                "radial-gradient(ellipse 65% 80% at 50% 115%,",
+                "  rgba(255, 235, 200, 0.55) 0%,",
+                "  rgba(255, 225, 175, 0.28) 25%,",
+                "  rgba(255, 218, 160, 0.10) 45%,",
+                "  transparent 68%",
+                "),",
+                "linear-gradient(to top,",
+                "  rgba(248, 236, 218, 0.40) 0%,",
+                "  rgba(248, 236, 218, 0.14) 28%,",
+                "  transparent 65%",
+                ")",
+              ].join(""),
+            }}
+          />
+        </motion.div>
+
+        {/* ── Ornamental continuation motif ───────────────────── */}
         <motion.div
           className="absolute bottom-7 left-1/2 z-20 flex -translate-x-1/2 items-center gap-3 pointer-events-none"
           style={{ opacity: continuationCueOpacity, y: continuationCueY }}
           animate={
             prefersReducedMotion
               ? undefined
-              : { y: [0, -3, 0], opacity: [0.09, 0.12, 0.09] }
+              : { y: [0, -4, 0], opacity: [0.14, 0.20, 0.14] }
           }
           transition={
             prefersReducedMotion
               ? undefined
               : {
-                  duration: 8,
+                  duration: 7,
                   ease: "easeInOut",
                   repeat: Number.POSITIVE_INFINITY,
                 }
           }
           aria-hidden="true"
         >
-          <div className="h-px w-8 bg-[#EDE2CF]/60" />
-          <div className="relative h-2.5 w-2.5 rotate-45 border border-[#EDE2CF]/65">
-            <div className="absolute inset-[2px] border border-[#F7F0E4]/40" />
+          <div className="h-px w-10 bg-gradient-to-r from-transparent via-[#D4C4A8]/50 to-transparent" />
+          <div className="relative h-2.5 w-2.5 rotate-45 border border-[#D4C4A8]/55">
+            <div className="absolute inset-[2px] border border-[#E8DBC8]/35" />
           </div>
-          <div className="h-px w-8 bg-[#EDE2CF]/60" />
+          <div className="h-px w-10 bg-gradient-to-r from-transparent via-[#D4C4A8]/50 to-transparent" />
         </motion.div>
 
         {/* ── Camera drift — wraps all text layers ─────────────── */}

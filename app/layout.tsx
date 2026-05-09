@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   authors: [{ name: "Parvathy & Harikrishnan" }],
   openGraph: {
     title: "Parvathy & Harikrishnan — Wedding Invitation",
-    description: "A cinematic celebration of love and new beginnings.",
+    description: "A celebration of love and new beginnings.",
     type: "website",
     images: [
       {
