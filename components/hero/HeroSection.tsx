@@ -43,10 +43,23 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
 
   const noMove = prefersReducedMotion;
 
-  // ── Background drift ──────────────────────────────────────────
-  const bgY = useTransform(
+  // ── Multi-plane parallax depth system ─────────────────────────
+  // Each plane moves at a different rate, creating dimensional separation
+  const bgDeepY = useTransform(         // Deepest layer — slowest
+    scrollYProgress, [0, 1],
+    noMove ? ["0%", "0%"] : ["0%", "-2%"]
+  );
+  const bgMidY = useTransform(          // Mid layer — medium
     scrollYProgress, [0, 1],
     noMove ? ["0%", "0%"] : ["0%", "-4%"]
+  );
+  const bgNearY = useTransform(         // Near layer — faster
+    scrollYProgress, [0, 1],
+    noMove ? ["0%", "0%"] : ["0%", "-7%"]
+  );
+  const bgForegroundY = useTransform(   // Foreground atmosphere — fastest
+    scrollYProgress, [0, 1],
+    noMove ? ["0%", "0%"] : ["0%", "-10%"]
   );
 
   // ── Scroll-driven lighting temperature shift ──────────────────
@@ -167,10 +180,15 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
       {/* ── Sticky viewport ──────────────────────────────────────── */}
       <div className="sticky top-0 h-screen w-full overflow-hidden">
 
-        {/* ── Atmosphere layers ─────────────────────────────────── */}
+        {/* ── Atmosphere layers — 4 parallax depth planes ──────── */}
+
+        {/* ╔═══════════════════════════════════════════════════════╗
+            ║ PLANE 1 — DEEP BACK (slowest parallax)              ║
+            ║ Base paper, large tonal gradients, grain             ║
+            ╚═══════════════════════════════════════════════════════╝ */}
         <motion.div
           className="absolute inset-0"
-          style={{ y: bgY }}
+          style={{ y: bgDeepY }}
           variants={atmosphereVariants}
           initial="hidden"
           animate={animateState}
@@ -178,23 +196,68 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
           {/* Base warm paper */}
           <div className="absolute inset-0 bg-[#F7F3EE]" />
 
-          {/* Tonal depth — asymmetric warmth + vertical drift */}
+          {/* Large tonal gradient — creates environmental depth */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
               background: [
-                "radial-gradient(ellipse 80% 65% at 35% 35%,",
-                "  rgba(255, 250, 240, 0.65) 0%,",
-                "  transparent 55%",
+                "radial-gradient(ellipse 120% 100% at 30% 20%,",
+                "  rgba(255, 252, 245, 0.7) 0%,",
+                "  rgba(248, 242, 230, 0.3) 35%,",
+                "  transparent 60%",
                 "),",
-                "radial-gradient(ellipse 55% 50% at 85% 75%,",
-                "  rgba(238, 228, 212, 0.25) 0%,",
+                "radial-gradient(ellipse 90% 80% at 80% 90%,",
+                "  rgba(242, 234, 220, 0.35) 0%,",
                 "  transparent 50%",
                 "),",
-                "linear-gradient(to bottom,",
-                "  rgba(255, 252, 245, 0.0) 0%,",
-                "  rgba(248, 240, 225, 0.12) 50%,",
-                "  rgba(242, 232, 215, 0.2) 100%",
+                "linear-gradient(165deg,",
+                "  rgba(255, 250, 240, 0.0) 0%,",
+                "  rgba(248, 240, 225, 0.15) 45%,",
+                "  rgba(240, 230, 210, 0.25) 100%",
+                ")",
+              ].join(""),
+            }}
+          />
+
+          {/* Linen texture — organic variation at base layer */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: GRAIN_URI,
+              backgroundRepeat: "repeat",
+              backgroundSize: "180px 180px",
+              opacity: 0.04,
+              mixBlendMode: "multiply" as const,
+            }}
+          />
+        </motion.div>
+
+        {/* ╔═══════════════════════════════════════════════════════╗
+            ║ PLANE 2 — MID DEPTH (medium parallax)               ║
+            ║ Lighting, spotlights, warm/cool gradients            ║
+            ╚═══════════════════════════════════════════════════════╝ */}
+        <motion.div
+          className="absolute inset-0"
+          style={{ y: bgMidY }}
+          variants={atmosphereVariants}
+          initial="hidden"
+          animate={animateState}
+        >
+          {/* Primary morning light — strong, asymmetric from top-left */}
+          <motion.div
+            className="absolute inset-0"
+            animate={prefersReducedMotion ? {} : sunlightAnimate}
+            transition={prefersReducedMotion ? {} : sunlightTransition}
+            style={{
+              background: [
+                "radial-gradient(ellipse 95% 75% at 10% -10%,",
+                "  rgba(255, 228, 155, 0.68) 0%,",
+                "  rgba(255, 208, 105, 0.28) 35%,",
+                "  transparent 58%",
+                "),",
+                "radial-gradient(ellipse 40% 35% at 92% 15%,",
+                "  rgba(245, 238, 225, 0.18) 0%,",
+                "  transparent 55%",
                 ")",
               ].join(""),
             }}
@@ -218,7 +281,7 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
             }}
           />
 
-          {/* Secondary light drift — subtle counter-movement */}
+          {/* Secondary light drift — counter-movement */}
           <motion.div
             className="absolute inset-0 pointer-events-none"
             style={{
@@ -235,43 +298,6 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
             }}
           />
 
-          {/* Additional depth layer — subtle texture variation */}
-          <div
-            className="absolute inset-0 pointer-events-none opacity-15"
-            style={{
-              background: [
-                "radial-gradient(ellipse 60% 40% at 15% 25%,",
-                "  rgba(250, 245, 235, 0.4) 0%,",
-                "  transparent 45%",
-                "),",
-                "radial-gradient(ellipse 45% 35% at 75% 85%,",
-                "  rgba(245, 235, 220, 0.3) 0%,",
-                "  transparent 40%",
-                ")",
-              ].join(""),
-            }}
-          />
-
-          {/* Primary morning light — stronger, asymmetric from top-left */}
-          <motion.div
-            className="absolute inset-0"
-            animate={prefersReducedMotion ? {} : sunlightAnimate}
-            transition={prefersReducedMotion ? {} : sunlightTransition}
-            style={{
-              background: [
-                "radial-gradient(ellipse 95% 75% at 10% -10%,",
-                "  rgba(255, 228, 155, 0.68) 0%,",
-                "  rgba(255, 208, 105, 0.28) 35%,",
-                "  transparent 58%",
-                "),",
-                "radial-gradient(ellipse 40% 35% at 92% 15%,",
-                "  rgba(245, 238, 225, 0.18) 0%,",
-                "  transparent 55%",
-                ")",
-              ].join(""),
-            }}
-          />
-
           {/* Secondary warm fill — lower right, out of phase */}
           <motion.div
             className="absolute inset-0"
@@ -283,7 +309,7 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
             }}
           />
 
-          {/* Scroll-driven warmth — light temperature evolves as journey progresses */}
+          {/* Scroll-driven warmth — light temperature evolves */}
           <motion.div
             className="absolute inset-0 pointer-events-none"
             style={{ opacity: lightWarmth }}
@@ -318,22 +344,82 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
               }}
             />
           </motion.div>
+        </motion.div>
 
-          {/* Paper grain — tactile depth */}
+        {/* ╔═══════════════════════════════════════════════════════╗
+            ║ PLANE 3 — NEAR ATMOSPHERE (faster parallax)         ║
+            ║ Haze, grain overlay, atmospheric particles           ║
+            ╚═══════════════════════════════════════════════════════╝ */}
+        <motion.div
+          className="absolute inset-0 pointer-events-none"
+          style={{ y: bgNearY }}
+        >
+          {/* Atmospheric haze — creates sense of air between layers */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: [
+                "radial-gradient(ellipse 70% 50% at 40% 35%,",
+                "  rgba(255, 252, 245, 0.12) 0%,",
+                "  transparent 50%",
+                "),",
+                "radial-gradient(ellipse 55% 40% at 65% 70%,",
+                "  rgba(250, 245, 232, 0.1) 0%,",
+                "  transparent 45%",
+                "),",
+                "radial-gradient(ellipse 40% 30% at 20% 80%,",
+                "  rgba(248, 240, 225, 0.08) 0%,",
+                "  transparent 40%",
+                ")",
+              ].join(""),
+            }}
+          />
+
+          {/* Fine grain — closer, slightly coarser texture */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
               backgroundImage: GRAIN_URI,
               backgroundRepeat: "repeat",
               backgroundSize: "256px 256px",
-              opacity: 0.052,
-              mixBlendMode: "multiply",
+              opacity: 0.055,
+              mixBlendMode: "multiply" as const,
             }}
           />
 
-          {/* Cinematic vignette — asymmetric, softer right fade */}
-          <div
+          {/* Soft light streaks — diagonal, cinematic */}
+          <motion.div
             className="absolute inset-0 pointer-events-none"
+            style={{
+              opacity: useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0.15, 0.25, 0.2, 0.1]),
+              background: [
+                "linear-gradient(135deg,",
+                "  transparent 20%,",
+                "  rgba(255, 248, 230, 0.08) 35%,",
+                "  transparent 37%,",
+                "  transparent 52%,",
+                "  rgba(255, 245, 220, 0.06) 58%,",
+                "  transparent 60%,",
+                "  transparent 75%,",
+                "  rgba(255, 242, 210, 0.04) 82%,",
+                "  transparent 84%",
+                ")",
+              ].join(""),
+            }}
+          />
+        </motion.div>
+
+        {/* ╔═══════════════════════════════════════════════════════╗
+            ║ PLANE 4 — FOREGROUND DEPTH (fastest parallax)       ║
+            ║ Vignette, edge fades, top halo, dust motes          ║
+            ╚═══════════════════════════════════════════════════════╝ */}
+        <motion.div
+          className="absolute inset-0 pointer-events-none z-10"
+          style={{ y: bgForegroundY }}
+        >
+          {/* Cinematic vignette — asymmetric, soft edges */}
+          <div
+            className="absolute inset-0"
             style={{
               background: [
                 "radial-gradient(ellipse 120% 110% at 45% 48%,",
@@ -347,9 +433,29 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
               ].join(""),
             }}
           />
+
+          {/* Edge darkening — creates depth at periphery */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: [
+                "linear-gradient(to right,",
+                "  rgba(30, 20, 10, 0.06) 0%,",
+                "  transparent 12%,",
+                "  transparent 88%,",
+                "  rgba(30, 20, 10, 0.04) 100%",
+                "),",
+                "linear-gradient(to bottom,",
+                "  transparent 0%,",
+                "  transparent 85%,",
+                "  rgba(30, 20, 10, 0.06) 100%",
+                ")",
+              ].join(""),
+            }}
+          />
         </motion.div>
 
-        {/* Foreground light diffusion — top halo */}
+        {/* Foreground light diffusion — top halo (no parallax, fixed) */}
         <div
           className="absolute inset-0 pointer-events-none z-10"
           style={{
