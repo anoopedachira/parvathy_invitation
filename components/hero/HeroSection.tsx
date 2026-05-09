@@ -447,7 +447,7 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
                 className="font-cormorant font-light italic text-[#2A1F14]/78 leading-relaxed"
                 style={{ fontSize: "clamp(1.35rem, 3vw, 2.1rem)" }}
               >
-                We&rsquo;re getting married —
+                We&rsquo;re getting married,
               </p>
               <p
                 className="font-cormorant font-light italic text-[#2A1F14]/78 leading-relaxed"

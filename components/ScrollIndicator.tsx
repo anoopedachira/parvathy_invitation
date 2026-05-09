@@ -18,11 +18,11 @@ export function ScrollIndicator() {
 
   return (
     <div
-      className="fixed top-0 right-[18px] h-full z-50 pointer-events-none"
+      className="fixed top-0 right-[18px] h-full z-50 pointer-events-none group"
       style={{ width: "1px" }}
     >
       <motion.div
-        className="origin-top w-full h-full"
+        className="origin-top w-full h-full transition-all duration-300 group-hover:shadow-[0_0_8px_rgba(139,115,85,0.4)]"
         style={{
           scaleY,
           opacity,

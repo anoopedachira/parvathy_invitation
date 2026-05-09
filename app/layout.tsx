@@ -37,7 +37,28 @@ const cormorantSC = Cormorant_SC({
 
 export const metadata: Metadata = {
   title: "Parvathy & Harikrishnan — A new chapter begins",
-  description: "A wedding invitation.",
+  description: "Join us for a beautiful celebration of love and new beginnings. May 5, 2026 — Royal Convention Centre, Pattambi.",
+  keywords: ["wedding", "invitation", "Parvathy", "Harikrishnan", "celebration"],
+  authors: [{ name: "Parvathy & Harikrishnan" }],
+  openGraph: {
+    title: "Parvathy & Harikrishnan — Wedding Invitation",
+    description: "A cinematic celebration of love and new beginnings.",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.jpg", // You'll need to add this image
+        width: 1200,
+        height: 630,
+        alt: "Parvathy & Harikrishnan Wedding Invitation",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Parvathy & Harikrishnan — A new chapter begins",
+    description: "Join us for a beautiful celebration of love and new beginnings.",
+    images: ["/og-image.jpg"],
+  },
 };
 
 export default function RootLayout({

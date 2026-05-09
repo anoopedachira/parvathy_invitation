@@ -6,9 +6,18 @@ import { HeroSection } from "@/components/hero/HeroSection";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { ScrollIndicator } from "@/components/ScrollIndicator";
 import { OpeningFrame } from "@/components/OpeningFrame";
+import { LoadingScreen } from "@/components/LoadingScreen";
+import { AudioToggle } from "@/components/AudioToggle";
 
 export default function Home() {
   const [coverOpen, setCoverOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulate loading time for fonts/images
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Lock scroll while cover is showing
   useEffect(() => {
@@ -36,9 +45,17 @@ export default function Home() {
       {/* Scroll indicator only appears after cover is dismissed */}
       {coverOpen && <ScrollIndicator />}
 
+      {/* Audio toggle for ambient music */}
+      {coverOpen && <AudioToggle />}
+
       {/* Opening cover — fixed overlay, exits with AnimatePresence */}
       <AnimatePresence>
         {!coverOpen && <OpeningFrame onOpen={handleOpen} />}
+      </AnimatePresence>
+
+      {/* Loading screen */}
+      <AnimatePresence>
+        {isLoading && <LoadingScreen />}
       </AnimatePresence>
     </main>
   );
