@@ -49,7 +49,7 @@ const initialH: Variants = {
 const cueText: Variants = {
   hidden: { opacity: 0 },
   visible: {
-    opacity: 0.35,
+    opacity: 0.55,
     transition: { duration: 1.6, ease: "easeOut", delay: 2.8 },
   },
 };
@@ -450,7 +450,7 @@ export function OpeningFrame({ onOpen }: OpeningFrameProps) {
             initial="hidden"
             animate="visible"
             className="font-inter font-light uppercase tracking-[0.6em] text-[#6B5742]"
-            style={{ fontSize: "clamp(0.4rem, 0.85vw, 0.5rem)" }}
+            style={{ fontSize: "clamp(0.5rem, 1vw, 0.65rem)" }}
           >
             Begin
           </motion.p>

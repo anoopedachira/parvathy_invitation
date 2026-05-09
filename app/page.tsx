@@ -13,6 +13,14 @@ export default function Home() {
   const [coverOpen, setCoverOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Reset scroll position on mount — prevents browser restoring mid-page scroll
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+  }, []);
+
   // Simulate loading time for fonts/images
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 2000);
@@ -32,6 +40,7 @@ export default function Home() {
   }, [coverOpen]);
 
   const handleOpen = useCallback(() => {
+    window.scrollTo(0, 0);
     setCoverOpen(true);
   }, []);
 
