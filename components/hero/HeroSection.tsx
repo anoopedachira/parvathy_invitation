@@ -1,11 +1,13 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   motion,
   useScroll,
   useTransform,
   useReducedMotion,
+  useMotionValueEvent,
+  type Variants,
 } from "framer-motion";
 import {
   atmosphereVariants,
@@ -25,6 +27,26 @@ import {
 const GRAIN_URI =
   "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
 
+// ── Timed reveal variants for sub-elements within scenes ────────
+
+const timedFadeUp = (delay: number): Variants => ({
+  hidden: { opacity: 0, y: 18, filter: "blur(6px)" },
+  visible: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: { duration: 1.2, ease: [0.25, 0.1, 0.25, 1], delay },
+  },
+});
+
+const timedFade = (delay: number, finalOpacity = 1): Variants => ({
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: finalOpacity,
+    transition: { duration: 1.0, ease: "easeOut", delay },
+  },
+});
+
 export function HeroSection({ revealed = true }: { revealed?: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useReducedMotion();
@@ -34,147 +56,84 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
   // Animation state: entrance animations fire only after cover opens
   const animateState = revealed ? "visible" : "hidden";
 
-  // Canvas: 1200vh → max reachable = (1200-100)/1200 = 0.917
-  // All animations complete by 0.89
+  // ── Scroll-progress-based scene triggers ──────────────────────
+  // Fires once when scroll reaches each scene's entry point
+  const [scene2Active, setScene2Active] = useState(false);
+  const [scene3Active, setScene3Active] = useState(false);
+  const [scene4Active, setScene4Active] = useState(false);
+
+  // Canvas: 600vh total (reduced from 1200vh)
+  // max reachable = (600-100)/600 = 0.833
   const scrollYProgress = useTransform(scrollY, (y) => {
     if (!containerRef.current) return 0;
     return Math.min(y / containerRef.current.offsetHeight, 1);
   });
 
+  // Trigger scene animations when scroll progress enters their range
+  useMotionValueEvent(scrollYProgress, "change", (latest) => {
+    if (!scene2Active && latest >= 0.18) setScene2Active(true);
+    if (!scene3Active && latest >= 0.46) setScene3Active(true);
+    if (!scene4Active && latest >= 0.76) setScene4Active(true);
+  });
+
   const noMove = prefersReducedMotion;
 
   // ── Multi-plane parallax depth system ─────────────────────────
-  // Each plane moves at a different rate, creating dimensional separation
-  const bgDeepY = useTransform(         // Deepest layer — slowest
+  const bgDeepY = useTransform(
     scrollYProgress, [0, 1],
     noMove ? ["0%", "0%"] : ["0%", "-2%"]
   );
-  const bgMidY = useTransform(          // Mid layer — medium
+  const bgMidY = useTransform(
     scrollYProgress, [0, 1],
     noMove ? ["0%", "0%"] : ["0%", "-4%"]
   );
-  const bgNearY = useTransform(         // Near layer — faster
+  const bgNearY = useTransform(
     scrollYProgress, [0, 1],
     noMove ? ["0%", "0%"] : ["0%", "-7%"]
   );
-  const bgForegroundY = useTransform(   // Foreground atmosphere — fastest
+  const bgForegroundY = useTransform(
     scrollYProgress, [0, 1],
     noMove ? ["0%", "0%"] : ["0%", "-10%"]
   );
 
-  // ── Scroll-driven lighting temperature shift ──────────────────
-  // Morning cool → golden warm as the experience unfolds
+  // ── Scroll-driven lighting ────────────────────────────────────
   const lightWarmth = useTransform(scrollYProgress, [0, 0.5, 0.9], [0, 0.3, 0.7]);
-  const goldenBloomOpacity = useTransform(scrollYProgress, [0.55, 0.85], [0, 0.35]);
+  const goldenBloomOpacity = useTransform(scrollYProgress, [0.5, 0.8], [0, 0.35]);
 
   // ═══════════════════════════════════════════════════════════════
-  // SCENE 1 — Names (0 → 0.08)
+  // SCENE TRANSITIONS — scroll controls scene enter/exit only
+  // Sub-elements auto-animate with timed delays via useInView
   // ═══════════════════════════════════════════════════════════════
-  const namesY = useTransform(
-    scrollYProgress, [0, 0.08],
-    noMove ? ["0%", "0%"] : ["0%", "-10%"]
-  );
-  const namesOpacity = useTransform(scrollYProgress, [0, 0.08], [1, 0]);
+
+  // Scene 1: Names (hold → dissolve 0.12→0.15)
+  const namesOpacity = useTransform(scrollYProgress, [0, 0.12, 0.15], [1, 1, 0]);
   const namesScale = useTransform(
-    scrollYProgress, [0, 0.08],
-    noMove ? [1, 1] : [1, 0.972]
+    scrollYProgress, [0, 0.15],
+    noMove ? [1, 1] : [1, 0.97]
   );
 
-  // ═══════════════════════════════════════════════════════════════
-  // SCENE 2 — Invitation (reveal 0.11→0.19, hold, dissolve 0.23→0.30)
-  // ═══════════════════════════════════════════════════════════════
-  const inviteY = useTransform(
-    scrollYProgress, [0.11, 0.16],
-    noMove ? ["0px", "0px"] : ["22px", "0px"]
-  );
+  // Scene 2: Invitation (appear 0.15→0.22, hold, dissolve 0.35→0.42)
   const inviteOpacity = useTransform(
-    scrollYProgress, [0.11, 0.16, 0.24, 0.32], [0, 1, 1, 0]
+    scrollYProgress, [0.15, 0.22, 0.35, 0.42], [0, 1, 1, 0]
   );
   const inviteFilter = useTransform(
-    scrollYProgress, [0.11, 0.16], ["blur(10px)", "blur(0px)"]
+    scrollYProgress, [0.15, 0.22], ["blur(8px)", "blur(0px)"]
   );
 
-  // ═══════════════════════════════════════════════════════════════
-  // SCENE 3 — Day Reveal (date 0.34→0.41, time 0.43→0.48,
-  //           venue 0.50→0.55, dissolve 0.57→0.63)
-  // ═══════════════════════════════════════════════════════════════
-  const dayRevealY = useTransform(
-    scrollYProgress, [0.34, 0.55],
-    noMove ? ["0px", "0px"] : ["0px", "-12px"]
-  );
+  // Scene 3: Day Reveal (appear 0.42→0.50, hold, dissolve 0.65→0.72)
   const dayRevealOpacity = useTransform(
-    scrollYProgress, [0.34, 0.41, 0.57, 0.63], [0, 1, 1, 0]
+    scrollYProgress, [0.42, 0.50, 0.65, 0.72], [0, 1, 1, 0]
   );
 
-  const dateOpacity = useTransform(scrollYProgress, [0.34, 0.41], [0, 1]);
-  const dateFilter = useTransform(
-    scrollYProgress, [0.34, 0.41], ["blur(8px)", "blur(0px)"]
-  );
-  const dateY = useTransform(
-    scrollYProgress, [0.34, 0.41],
-    noMove ? ["0px", "0px"] : ["18px", "0px"]
-  );
-
-  const timeOpacity = useTransform(scrollYProgress, [0.43, 0.48], [0, 1]);
-  const timeFilter = useTransform(
-    scrollYProgress, [0.43, 0.48], ["blur(4px)", "blur(0px)"]
-  );
-  const timeY = useTransform(
-    scrollYProgress, [0.43, 0.48],
-    noMove ? ["0px", "0px"] : ["12px", "0px"]
-  );
-
-  const venueOpacity = useTransform(scrollYProgress, [0.50, 0.55], [0, 1]);
-  const venueFilter = useTransform(
-    scrollYProgress, [0.50, 0.55], ["blur(4px)", "blur(0px)"]
-  );
-  const venueY = useTransform(
-    scrollYProgress, [0.50, 0.55],
-    noMove ? ["0px", "0px"] : ["12px", "0px"]
-  );
-
-  // ═══════════════════════════════════════════════════════════════
-  // SCENE 4 — Warm Closing (0.67→0.74 sentiment, 0.75→0.79 ornament,
-  //           0.80→0.84 date+venue, 0.84→0.88 names)
-  // ═══════════════════════════════════════════════════════════════
-  const closingY = useTransform(
-    scrollYProgress, [0.67, 0.89],
-    noMove ? ["0px", "0px"] : ["0px", "-8px"]
-  );
-
-  const closingMainOpacity = useTransform(scrollYProgress, [0.67, 0.74], [0, 1]);
-  const closingMainFilter = useTransform(
-    scrollYProgress, [0.67, 0.74], ["blur(8px)", "blur(0px)"]
-  );
-  const closingMainY = useTransform(
-    scrollYProgress, [0.67, 0.74],
-    noMove ? ["0px", "0px"] : ["18px", "0px"]
-  );
-
-  const closingOrnamentOpacity = useTransform(scrollYProgress, [0.75, 0.79], [0, 0.4]);
-
-  const closingDetailsOpacity = useTransform(scrollYProgress, [0.80, 0.84], [0, 1]);
-  const closingDetailsFilter = useTransform(
-    scrollYProgress, [0.80, 0.84], ["blur(4px)", "blur(0px)"]
-  );
-  const closingDetailsY = useTransform(
-    scrollYProgress, [0.80, 0.84],
-    noMove ? ["0px", "0px"] : ["10px", "0px"]
-  );
-
-  const closingNamesOpacity = useTransform(scrollYProgress, [0.84, 0.88], [0, 1]);
-  const closingNamesFilter = useTransform(
-    scrollYProgress, [0.84, 0.88], ["blur(4px)", "blur(0px)"]
-  );
-  const closingNamesY = useTransform(
-    scrollYProgress, [0.84, 0.88],
-    noMove ? ["0px", "0px"] : ["8px", "0px"]
+  // Scene 4: Warm Closing (appear 0.72→0.80, hold through end)
+  const closingOpacity = useTransform(
+    scrollYProgress, [0.72, 0.80], [0, 1]
   );
 
   return (
     <section
       ref={containerRef}
-      className="relative min-h-[1200vh]"
+      className="relative min-h-[600vh]"
       aria-label="Wedding invitation"
     >
       {/* ── Sticky viewport ──────────────────────────────────────── */}
@@ -182,21 +141,15 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
 
         {/* ── Atmosphere layers — 4 parallax depth planes ──────── */}
 
-        {/* ╔═══════════════════════════════════════════════════════╗
-            ║ PLANE 1 — DEEP BACK (slowest parallax)              ║
-            ║ Base paper, large tonal gradients, grain             ║
-            ╚═══════════════════════════════════════════════════════╝ */}
+        {/* PLANE 1 — DEEP BACK */}
         <motion.div
-          className="absolute inset-0"
-          style={{ y: bgDeepY }}
+          className="absolute pointer-events-none"
+          style={{ y: bgDeepY, inset: "-5%" }}
           variants={atmosphereVariants}
           initial="hidden"
           animate={animateState}
         >
-          {/* Base warm paper */}
           <div className="absolute inset-0 bg-[#F7F3EE]" />
-
-          {/* Large tonal gradient — creates environmental depth */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
@@ -218,8 +171,6 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
               ].join(""),
             }}
           />
-
-          {/* Linen texture — organic variation at base layer */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
@@ -232,18 +183,14 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
           />
         </motion.div>
 
-        {/* ╔═══════════════════════════════════════════════════════╗
-            ║ PLANE 2 — MID DEPTH (medium parallax)               ║
-            ║ Lighting, spotlights, warm/cool gradients            ║
-            ╚═══════════════════════════════════════════════════════╝ */}
+        {/* PLANE 2 — MID DEPTH */}
         <motion.div
-          className="absolute inset-0"
-          style={{ y: bgMidY }}
+          className="absolute"
+          style={{ y: bgMidY, inset: "-5%" }}
           variants={atmosphereVariants}
           initial="hidden"
           animate={animateState}
         >
-          {/* Primary morning light — strong, asymmetric from top-left */}
           <motion.div
             className="absolute inset-0"
             animate={prefersReducedMotion ? {} : sunlightAnimate}
@@ -262,8 +209,6 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
               ].join(""),
             }}
           />
-
-          {/* Dynamic spotlight — follows scroll progress */}
           <motion.div
             className="absolute inset-0 pointer-events-none"
             style={{
@@ -280,8 +225,6 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
               ),
             }}
           />
-
-          {/* Secondary light drift — counter-movement */}
           <motion.div
             className="absolute inset-0 pointer-events-none"
             style={{
@@ -297,8 +240,6 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
               ),
             }}
           />
-
-          {/* Secondary warm fill — lower right, out of phase */}
           <motion.div
             className="absolute inset-0"
             animate={prefersReducedMotion ? {} : warmGlowAnimate}
@@ -308,8 +249,6 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
                 "radial-gradient(ellipse 55% 45% at 88% 95%, rgba(255, 218, 140, 0.15) 0%, transparent 55%)",
             }}
           />
-
-          {/* Scroll-driven warmth — light temperature evolves */}
           <motion.div
             className="absolute inset-0 pointer-events-none"
             style={{ opacity: lightWarmth }}
@@ -322,8 +261,6 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
               }}
             />
           </motion.div>
-
-          {/* Golden hour bloom — intensifies in final scenes */}
           <motion.div
             className="absolute inset-0 pointer-events-none"
             style={{ opacity: goldenBloomOpacity }}
@@ -346,15 +283,11 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
           </motion.div>
         </motion.div>
 
-        {/* ╔═══════════════════════════════════════════════════════╗
-            ║ PLANE 3 — NEAR ATMOSPHERE (faster parallax)         ║
-            ║ Haze, grain overlay, atmospheric particles           ║
-            ╚═══════════════════════════════════════════════════════╝ */}
+        {/* PLANE 3 — NEAR ATMOSPHERE */}
         <motion.div
-          className="absolute inset-0 pointer-events-none"
-          style={{ y: bgNearY }}
+          className="absolute pointer-events-none"
+          style={{ y: bgNearY, inset: "-5%" }}
         >
-          {/* Atmospheric haze — creates sense of air between layers */}
           <div
             className="absolute inset-0"
             style={{
@@ -374,8 +307,6 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
               ].join(""),
             }}
           />
-
-          {/* Fine grain — closer, slightly coarser texture */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
@@ -386,8 +317,6 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
               mixBlendMode: "multiply" as const,
             }}
           />
-
-          {/* Soft light streaks — diagonal, cinematic */}
           <motion.div
             className="absolute inset-0 pointer-events-none"
             style={{
@@ -409,15 +338,11 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
           />
         </motion.div>
 
-        {/* ╔═══════════════════════════════════════════════════════╗
-            ║ PLANE 4 — FOREGROUND DEPTH (fastest parallax)       ║
-            ║ Vignette, edge fades, top halo, dust motes          ║
-            ╚═══════════════════════════════════════════════════════╝ */}
+        {/* PLANE 4 — FOREGROUND DEPTH */}
         <motion.div
-          className="absolute inset-0 pointer-events-none z-10"
-          style={{ y: bgForegroundY }}
+          className="absolute pointer-events-none z-10"
+          style={{ y: bgForegroundY, inset: "-5%" }}
         >
-          {/* Cinematic vignette — asymmetric, soft edges */}
           <div
             className="absolute inset-0"
             style={{
@@ -433,8 +358,6 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
               ].join(""),
             }}
           />
-
-          {/* Edge darkening — creates depth at periphery */}
           <div
             className="absolute inset-0"
             style={{
@@ -455,7 +378,7 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
           />
         </motion.div>
 
-        {/* Foreground light diffusion — top halo (no parallax, fixed) */}
+        {/* Top halo (fixed) */}
         <div
           className="absolute inset-0 pointer-events-none z-10"
           style={{
@@ -470,10 +393,12 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
           animate={prefersReducedMotion ? {} : cameraFloatAnimate}
           transition={prefersReducedMotion ? {} : cameraFloatTransition}
         >
-          {/* ── Scene 1: Names ──────────────────────────────────── */}
+          {/* ════════════════════════════════════════════════════════
+              SCENE 1: Names — entrance animated, scroll dissolves
+              ════════════════════════════════════════════════════════ */}
           <motion.div
             className="absolute inset-0 flex items-center justify-center"
-            style={{ y: namesY, opacity: namesOpacity, scale: namesScale }}
+            style={{ opacity: namesOpacity, scale: namesScale }}
           >
             <div
               className="flex flex-col items-center text-center select-none"
@@ -514,7 +439,6 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
                 Harikrishnan
               </motion.h1>
 
-              {/* Ornamental rule */}
               <motion.div
                 variants={subtitleVariants}
                 initial="hidden"
@@ -539,68 +463,72 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
             </div>
           </motion.div>
 
-          {/* ── Scene 2: Invitation ─────────────────────────────── */}
+          {/* ════════════════════════════════════════════════════════
+              SCENE 2: Invitation — scroll enters, lines auto-stagger
+              ════════════════════════════════════════════════════════ */}
           <motion.div
             className="absolute inset-0 flex items-center justify-center pointer-events-none"
-            style={{
-              y: inviteY,
-              opacity: inviteOpacity,
-              filter: inviteFilter,
-            }}
+            style={{ opacity: inviteOpacity, filter: inviteFilter }}
           >
             <div className="flex flex-col items-center text-center select-none gap-1">
-              <p
+              <motion.p
+                variants={timedFadeUp(0)}
+                initial="hidden"
+                animate={scene2Active ? "visible" : "hidden"}
                 className="font-cormorant font-light italic text-[#2A1F14]/78 leading-relaxed"
                 style={{ fontSize: "clamp(1.35rem, 3vw, 2.1rem)" }}
               >
                 We&rsquo;re getting married,
-              </p>
-              <p
+              </motion.p>
+              <motion.p
+                variants={timedFadeUp(0.5)}
+                initial="hidden"
+                animate={scene2Active ? "visible" : "hidden"}
                 className="font-cormorant font-light italic text-[#2A1F14]/78 leading-relaxed"
                 style={{ fontSize: "clamp(1.35rem, 3vw, 2.1rem)" }}
               >
                 and we&rsquo;d love you there.
-              </p>
+              </motion.p>
             </div>
           </motion.div>
 
-          {/* ── Scene 3: Day Reveal ─────────────────────────────── */}
+          {/* ════════════════════════════════════════════════════════
+              SCENE 3: Day Reveal — scroll enters, details auto-cascade
+              Date → Time → Venue with timed delays
+              ════════════════════════════════════════════════════════ */}
           <motion.div
             className="absolute inset-0 flex items-center justify-center pointer-events-none"
-            style={{ y: dayRevealY, opacity: dayRevealOpacity }}
+            style={{ opacity: dayRevealOpacity }}
           >
             <div className="flex flex-col items-center text-center select-none gap-8">
+              {/* Date — appears first */}
               <motion.p
+                variants={timedFadeUp(0)}
+                initial="hidden"
+                animate={scene3Active ? "visible" : "hidden"}
                 className="font-cormorant font-light tracking-[0.06em] text-[#2A1F14] leading-none"
-                style={{
-                  fontSize: "clamp(2.4rem, 7vw, 4.5rem)",
-                  y: dateY,
-                  opacity: dateOpacity,
-                  filter: dateFilter,
-                }}
+                style={{ fontSize: "clamp(2.4rem, 7vw, 4.5rem)" }}
               >
                 5 July 2026
               </motion.p>
 
+              {/* Time — appears 0.6s after date */}
               <motion.p
+                variants={timedFadeUp(0.6)}
+                initial="hidden"
+                animate={scene3Active ? "visible" : "hidden"}
                 className="font-inter font-light uppercase tracking-[0.35em] text-[#6B5742]/60"
-                style={{
-                  fontSize: "clamp(0.7rem, 1.5vw, 0.88rem)",
-                  y: timeY,
-                  opacity: timeOpacity,
-                  filter: timeFilter,
-                }}
+                style={{ fontSize: "clamp(0.7rem, 1.5vw, 0.88rem)" }}
               >
                 10:30 AM
               </motion.p>
 
+              {/* Venue — appears 1.2s after date */}
               <motion.div
+                variants={timedFadeUp(1.2)}
+                initial="hidden"
+                animate={scene3Active ? "visible" : "hidden"}
                 className="flex flex-col items-center gap-1.5"
-                style={{
-                  y: venueY,
-                  opacity: venueOpacity,
-                  filter: venueFilter,
-                }}
               >
                 <p
                   className="font-cormorant font-light text-[#2A1F14]/88 leading-relaxed"
@@ -618,20 +546,21 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
             </div>
           </motion.div>
 
-          {/* ── Scene 4: Warm Closing — everything comes together ── */}
+          {/* ════════════════════════════════════════════════════════
+              SCENE 4: Warm Closing — scroll enters, all parts auto-cascade
+              Sentiment → Ornament → Details → Names
+              ════════════════════════════════════════════════════════ */}
           <motion.div
             className="absolute inset-0 flex items-center justify-center pointer-events-none"
-            style={{ y: closingY }}
+            style={{ opacity: closingOpacity }}
           >
             <div className="flex flex-col items-center text-center select-none gap-7">
-              {/* Closing sentiment */}
+              {/* Closing sentiment — appears first */}
               <motion.div
+                variants={timedFadeUp(0)}
+                initial="hidden"
+                animate={scene4Active ? "visible" : "hidden"}
                 className="flex flex-col items-center gap-1"
-                style={{
-                  y: closingMainY,
-                  opacity: closingMainOpacity,
-                  filter: closingMainFilter,
-                }}
               >
                 <p
                   className="font-cormorant font-light italic text-[#2A1F14]/80 leading-relaxed"
@@ -647,10 +576,12 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
                 </p>
               </motion.div>
 
-              {/* Ornamental divider */}
+              {/* Ornamental divider — 0.8s */}
               <motion.div
+                variants={timedFade(0.8, 0.4)}
+                initial="hidden"
+                animate={scene4Active ? "visible" : "hidden"}
                 className="flex items-center gap-4"
-                style={{ opacity: closingOrnamentOpacity }}
                 aria-hidden="true"
               >
                 <div className="w-10 h-px bg-[#8B7355]/30" />
@@ -658,14 +589,12 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
                 <div className="w-10 h-px bg-[#8B7355]/30" />
               </motion.div>
 
-              {/* Date + venue — elegant summation */}
+              {/* Date + venue — 1.4s */}
               <motion.div
+                variants={timedFadeUp(1.4)}
+                initial="hidden"
+                animate={scene4Active ? "visible" : "hidden"}
                 className="flex flex-col items-center gap-1.5"
-                style={{
-                  y: closingDetailsY,
-                  opacity: closingDetailsOpacity,
-                  filter: closingDetailsFilter,
-                }}
               >
                 <p
                   className="font-cormorant font-light tracking-[0.04em] text-[#2A1F14]/72"
@@ -681,15 +610,13 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
                 </p>
               </motion.div>
 
-              {/* Names — warm, present, final anchor */}
+              {/* Names — 2.0s */}
               <motion.p
+                variants={timedFadeUp(2.0)}
+                initial="hidden"
+                animate={scene4Active ? "visible" : "hidden"}
                 className="font-cormorant font-light tracking-[0.06em] text-[#2A1F14]/82"
-                style={{
-                  fontSize: "clamp(1.2rem, 2.8vw, 1.8rem)",
-                  y: closingNamesY,
-                  opacity: closingNamesOpacity,
-                  filter: closingNamesFilter,
-                }}
+                style={{ fontSize: "clamp(1.2rem, 2.8vw, 1.8rem)" }}
               >
                 Parvathy &amp; Harikrishnan
               </motion.p>
