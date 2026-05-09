@@ -200,6 +200,58 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
             }}
           />
 
+          {/* Dynamic spotlight — follows scroll progress */}
+          <motion.div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: useTransform(
+                scrollYProgress,
+                [0, 0.25, 0.5, 0.75, 1],
+                [
+                  "radial-gradient(ellipse 45% 40% at 30% 20%, rgba(255, 245, 220, 0.3) 0%, transparent 60%)",
+                  "radial-gradient(ellipse 50% 45% at 50% 30%, rgba(255, 240, 200, 0.4) 0%, transparent 65%)",
+                  "radial-gradient(ellipse 55% 50% at 70% 40%, rgba(255, 235, 180, 0.35) 0%, transparent 70%)",
+                  "radial-gradient(ellipse 60% 55% at 60% 60%, rgba(255, 230, 160, 0.45) 0%, transparent 75%)",
+                  "radial-gradient(ellipse 65% 60% at 50% 80%, rgba(255, 225, 140, 0.5) 0%, transparent 80%)",
+                ]
+              ),
+            }}
+          />
+
+          {/* Secondary light drift — subtle counter-movement */}
+          <motion.div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: useTransform(
+                scrollYProgress,
+                [0, 0.3, 0.6, 1],
+                [
+                  "radial-gradient(ellipse 35% 30% at 80% 10%, rgba(255, 250, 235, 0.2) 0%, transparent 50%)",
+                  "radial-gradient(ellipse 40% 35% at 20% 50%, rgba(255, 245, 215, 0.25) 0%, transparent 55%)",
+                  "radial-gradient(ellipse 45% 40% at 90% 70%, rgba(255, 240, 195, 0.3) 0%, transparent 60%)",
+                  "radial-gradient(ellipse 50% 45% at 30% 90%, rgba(255, 235, 175, 0.35) 0%, transparent 65%)",
+                ]
+              ),
+            }}
+          />
+
+          {/* Additional depth layer — subtle texture variation */}
+          <div
+            className="absolute inset-0 pointer-events-none opacity-15"
+            style={{
+              background: [
+                "radial-gradient(ellipse 60% 40% at 15% 25%,",
+                "  rgba(250, 245, 235, 0.4) 0%,",
+                "  transparent 45%",
+                "),",
+                "radial-gradient(ellipse 45% 35% at 75% 85%,",
+                "  rgba(245, 235, 220, 0.3) 0%,",
+                "  transparent 40%",
+                ")",
+              ].join(""),
+            }}
+          />
+
           {/* Primary morning light — stronger, asymmetric from top-left */}
           <motion.div
             className="absolute inset-0"
@@ -325,7 +377,7 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
                 variants={titleVariants}
                 initial="hidden"
                 animate={animateState}
-                className="font-cormorant font-light tracking-[0.08em] text-[#2A1F14]/88 leading-none"
+                className="font-cormorant font-light tracking-[0.08em] text-[#2A1F14]/95 leading-none"
                 style={{ fontSize: "clamp(3.2rem, 9.5vw, 7rem)" }}
               >
                 Parvathy
@@ -350,7 +402,7 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
                 variants={partnerNameVariants}
                 initial="hidden"
                 animate={animateState}
-                className="font-cormorant font-light tracking-[0.08em] text-[#2A1F14]/88 leading-none"
+                className="font-cormorant font-light tracking-[0.08em] text-[#2A1F14]/95 leading-none"
                 style={{ fontSize: "clamp(3.2rem, 9.5vw, 7rem)" }}
               >
                 Harikrishnan
@@ -373,7 +425,7 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
                 variants={subtitleVariants}
                 initial="hidden"
                 animate={animateState}
-                className="font-inter font-light uppercase tracking-[0.42em] text-[#6B5742]/78"
+                className="font-inter font-light uppercase tracking-[0.42em] text-[#6B5742]/85"
                 style={{ fontSize: "clamp(0.6rem, 1.3vw, 0.78rem)" }}
               >
                 A new chapter begins
@@ -445,13 +497,13 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
                 }}
               >
                 <p
-                  className="font-cormorant font-light text-[#2A1F14]/82 leading-relaxed"
+                  className="font-cormorant font-light text-[#2A1F14]/88 leading-relaxed"
                   style={{ fontSize: "clamp(1.15rem, 2.6vw, 1.65rem)" }}
                 >
                   Royal Convention Centre
                 </p>
                 <p
-                  className="font-cormorant font-light text-[#6B5742]/68 leading-relaxed"
+                  className="font-cormorant font-light text-[#6B5742]/75 leading-relaxed"
                   style={{ fontSize: "clamp(1rem, 2.2vw, 1.4rem)" }}
                 >
                   Pattambi
@@ -525,7 +577,7 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
 
               {/* Names — warm, present, final anchor */}
               <motion.p
-                className="font-cormorant font-light tracking-[0.06em] text-[#2A1F14]/75"
+                className="font-cormorant font-light tracking-[0.06em] text-[#2A1F14]/82"
                 style={{
                   fontSize: "clamp(1.2rem, 2.8vw, 1.8rem)",
                   y: closingNamesY,
