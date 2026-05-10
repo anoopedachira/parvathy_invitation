@@ -85,8 +85,8 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
     };
   }, [revealed, autoAdvanced, autoScroll]);
 
-  // Canvas: 600vh total (reduced from 1200vh)
-  // max reachable = (600-100)/600 = 0.833
+  // Canvas: 400vh total (reduced from 600vh for shorter mobile scroll)
+  // max reachable = (400-100)/400 = 0.75
   const scrollYProgress = useTransform(scrollY, (y) => {
     if (!containerRef.current) return 0;
     return Math.min(y / containerRef.current.offsetHeight, 1);
@@ -217,7 +217,7 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
   return (
     <section
       ref={containerRef}
-      className="relative min-h-[600vh]"
+      className="relative min-h-[400vh]"
       aria-label="Wedding invitation"
     >
       {/* ── Sticky viewport ──────────────────────────────────────── */}
