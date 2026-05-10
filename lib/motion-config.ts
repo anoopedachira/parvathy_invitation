@@ -13,41 +13,45 @@ export const atmosphereVariants: Variants = {
 
 /** Primary name lines: blur-to-sharp reveal */
 export const titleVariants: Variants = {
-  hidden: { opacity: 0, filter: "blur(8px)" },
+  hidden: { opacity: 0, y: 12, filter: "blur(6px)" },
   visible: {
     opacity: 1,
+    y: 0,
     filter: "blur(0px)",
-    transition: { duration: 1.8, ease: [0.25, 0.1, 0.25, 1], delay: 1.4 },
+    transition: { duration: 1.5, ease: [0.22, 0.08, 0.24, 1], delay: 1.2 },
   },
 };
 
 /** Partner name: slightly delayed after first name */
 export const partnerNameVariants: Variants = {
-  hidden: { opacity: 0, filter: "blur(8px)" },
+  hidden: { opacity: 0, y: 12, filter: "blur(6px)" },
   visible: {
     opacity: 1,
+    y: 0,
     filter: "blur(0px)",
-    transition: { duration: 1.8, ease: [0.25, 0.1, 0.25, 1], delay: 2.0 },
+    transition: { duration: 1.5, ease: [0.22, 0.08, 0.24, 1], delay: 1.68 },
   },
 };
 
 /** Ampersand script: mid-sequence reveal */
 export const ampersandVariants: Variants = {
-  hidden: { opacity: 0, filter: "blur(6px)" },
+  hidden: { opacity: 0, y: 10, filter: "blur(5px)" },
   visible: {
     opacity: 1,
+    y: 0,
     filter: "blur(0px)",
-    transition: { duration: 1.6, ease: [0.25, 0.1, 0.25, 1], delay: 1.8 },
+    transition: { duration: 1.4, ease: [0.22, 0.08, 0.24, 1], delay: 1.44 },
   },
 };
 
 /** Supporting text and ornamental dividers */
 export const subtitleVariants: Variants = {
-  hidden: { opacity: 0, filter: "blur(4px)" },
+  hidden: { opacity: 0, y: 8, filter: "blur(4px)" },
   visible: {
     opacity: 1,
+    y: 0,
     filter: "blur(0px)",
-    transition: { duration: 1.4, ease: [0.25, 0.1, 0.25, 1], delay: 2.6 },
+    transition: { duration: 1.3, ease: [0.22, 0.08, 0.24, 1], delay: 2.0 },
   },
 };
 

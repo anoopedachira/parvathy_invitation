@@ -30,12 +30,12 @@ const GRAIN_URI =
 // ── Timed reveal variants for sub-elements within scenes ────────
 
 const timedFadeUp = (delay: number): Variants => ({
-  hidden: { opacity: 0, y: 18, filter: "blur(6px)" },
+  hidden: { opacity: 0, y: 12, filter: "blur(5px)" },
   visible: {
     opacity: 1,
     y: 0,
     filter: "blur(0px)",
-    transition: { duration: 1.2, ease: [0.25, 0.1, 0.25, 1], delay },
+    transition: { duration: 1.35, ease: [0.22, 0.08, 0.24, 1], delay },
   },
 });
 
@@ -136,6 +136,23 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
     scrollYProgress,
     [0, 0.5, 1],
     noMove ? [0, 0, 0] : [0, -6, -12]
+  );
+
+  // ── Soft bokeh drift (very subtle depth layer) ───────────────
+  const bokehLayerOpacity = useTransform(
+    scrollYProgress,
+    [0, 0.2, 0.6, 1],
+    [0.13, 0.17, 0.15, 0.1]
+  );
+  const bokehAOpacity = useTransform(
+    scrollYProgress,
+    [0, 0.35, 0.75, 1],
+    [0.08, 0.12, 0.1, 0.06]
+  );
+  const bokehBOpacity = useTransform(
+    scrollYProgress,
+    [0, 0.25, 0.7, 1],
+    [0.06, 0.1, 0.11, 0.07]
   );
 
   // ── Cinematic spotlights — asymmetric pools that shift per scene ──
@@ -504,6 +521,73 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
           />
         </motion.div>
 
+        {/* ── Soft Bokeh Layer ─────────────────────────────────── */}
+        <motion.div
+          className="absolute inset-0 pointer-events-none z-[12]"
+          style={{ opacity: bokehLayerOpacity }}
+          aria-hidden="true"
+        >
+          <motion.div
+            className="absolute rounded-full"
+            style={{
+              left: "10%",
+              top: "16%",
+              width: "52vw",
+              height: "52vw",
+              maxWidth: "680px",
+              maxHeight: "680px",
+              background:
+                "radial-gradient(circle, rgba(255, 236, 196, 0.7) 0%, rgba(255, 236, 196, 0.2) 45%, transparent 74%)",
+              filter: "blur(70px)",
+              opacity: bokehAOpacity,
+            }}
+            animate={
+              prefersReducedMotion
+                ? undefined
+                : { x: [0, 26, -18, 0], y: [0, -16, 12, 0], scale: [1, 1.04, 1] }
+            }
+            transition={
+              prefersReducedMotion
+                ? undefined
+                : {
+                    duration: 24,
+                    ease: "easeInOut",
+                    repeat: Number.POSITIVE_INFINITY,
+                  }
+            }
+          />
+
+          <motion.div
+            className="absolute rounded-full"
+            style={{
+              right: "8%",
+              bottom: "12%",
+              width: "48vw",
+              height: "48vw",
+              maxWidth: "620px",
+              maxHeight: "620px",
+              background:
+                "radial-gradient(circle, rgba(255, 224, 176, 0.65) 0%, rgba(255, 224, 176, 0.18) 42%, transparent 72%)",
+              filter: "blur(76px)",
+              opacity: bokehBOpacity,
+            }}
+            animate={
+              prefersReducedMotion
+                ? undefined
+                : { x: [0, -24, 14, 0], y: [0, 14, -10, 0], scale: [1, 0.97, 1] }
+            }
+            transition={
+              prefersReducedMotion
+                ? undefined
+                : {
+                    duration: 28,
+                    ease: "easeInOut",
+                    repeat: Number.POSITIVE_INFINITY,
+                  }
+            }
+          />
+        </motion.div>
+
         {/* ── Bottom-edge continuation glow (boosted 2×) ─────── */}
         <motion.div
           className="absolute inset-x-0 bottom-0 h-[28vh] pointer-events-none z-10"
@@ -583,40 +667,46 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
               className="flex flex-col items-center text-center select-none"
               style={{ marginTop: "-4vh" }}
             >
-              <motion.h1
-                variants={titleVariants}
-                initial="hidden"
-                animate={animateState}
-                className="font-cormorant font-light tracking-[0.08em] text-[#2A1F14]/95 leading-none"
-                style={{ fontSize: "clamp(3.2rem, 9.5vw, 7rem)" }}
-              >
-                Parvathy
-              </motion.h1>
-
-              <motion.div
-                variants={ampersandVariants}
-                initial="hidden"
-                animate={animateState}
-                className="my-4 leading-none"
-              >
-                <span
-                  className="font-great-vibes text-[#8B7355]/85"
-                  style={{ fontSize: "clamp(2rem, 5.5vw, 3.8rem)" }}
-                  aria-hidden="true"
+              <div className="overflow-hidden py-2">
+                <motion.h1
+                  variants={titleVariants}
+                  initial="hidden"
+                  animate={animateState}
+                  className="font-cormorant font-light tracking-[0.08em] text-[#2A1F14]/95 leading-none"
+                  style={{ fontSize: "clamp(3.2rem, 9.5vw, 7rem)" }}
                 >
-                  &amp;
-                </span>
-              </motion.div>
+                  Parvathy
+                </motion.h1>
+              </div>
 
-              <motion.h1
-                variants={partnerNameVariants}
-                initial="hidden"
-                animate={animateState}
-                className="font-cormorant font-light tracking-[0.08em] text-[#2A1F14]/95 leading-none"
-                style={{ fontSize: "clamp(3.2rem, 9.5vw, 7rem)" }}
-              >
-                Harikrishnan
-              </motion.h1>
+              <div className="overflow-hidden py-1">
+                <motion.div
+                  variants={ampersandVariants}
+                  initial="hidden"
+                  animate={animateState}
+                  className="my-4 leading-none"
+                >
+                  <span
+                    className="font-great-vibes text-[#8B7355]/85"
+                    style={{ fontSize: "clamp(2rem, 5.5vw, 3.8rem)" }}
+                    aria-hidden="true"
+                  >
+                    &amp;
+                  </span>
+                </motion.div>
+              </div>
+
+              <div className="overflow-hidden py-2">
+                <motion.h1
+                  variants={partnerNameVariants}
+                  initial="hidden"
+                  animate={animateState}
+                  className="font-cormorant font-light tracking-[0.08em] text-[#2A1F14]/95 leading-none"
+                  style={{ fontSize: "clamp(3.2rem, 9.5vw, 7rem)" }}
+                >
+                  Harikrishnan
+                </motion.h1>
+              </div>
 
               <motion.div
                 variants={subtitleVariants}
@@ -630,15 +720,17 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
                 <div className="w-14 h-px bg-[#8B7355]/30" />
               </motion.div>
 
-              <motion.p
-                variants={subtitleVariants}
-                initial="hidden"
-                animate={animateState}
-                className="font-inter font-light uppercase tracking-[0.42em] text-[#6B5742]/85"
-                style={{ fontSize: "clamp(0.6rem, 1.3vw, 0.78rem)" }}
-              >
-                A new chapter begins
-              </motion.p>
+              <div className="overflow-hidden py-1">
+                <motion.p
+                  variants={subtitleVariants}
+                  initial="hidden"
+                  animate={animateState}
+                  className="font-inter font-light uppercase tracking-[0.42em] text-[#6B5742]/85"
+                  style={{ fontSize: "clamp(0.6rem, 1.3vw, 0.78rem)" }}
+                >
+                  A new chapter begins
+                </motion.p>
+              </div>
             </div>
           </motion.div>
 
@@ -650,24 +742,28 @@ export function HeroSection({ revealed = true }: { revealed?: boolean }) {
             style={{ opacity: inviteOpacity, filter: inviteFilter }}
           >
             <div className="flex flex-col items-center text-center select-none gap-1">
-              <motion.p
-                variants={timedFadeUp(0)}
-                initial="hidden"
-                animate={scene2Active ? "visible" : "hidden"}
-                className="font-cormorant font-light italic text-[#2A1F14]/78 leading-relaxed"
-                style={{ fontSize: "clamp(1.35rem, 3vw, 2.1rem)" }}
-              >
-                We&rsquo;re getting married,
-              </motion.p>
-              <motion.p
-                variants={timedFadeUp(0.5)}
-                initial="hidden"
-                animate={scene2Active ? "visible" : "hidden"}
-                className="font-cormorant font-light italic text-[#2A1F14]/78 leading-relaxed"
-                style={{ fontSize: "clamp(1.35rem, 3vw, 2.1rem)" }}
-              >
-                and we&rsquo;d love you there.
-              </motion.p>
+              <div className="overflow-hidden py-1">
+                <motion.p
+                  variants={timedFadeUp(0)}
+                  initial="hidden"
+                  animate={scene2Active ? "visible" : "hidden"}
+                  className="font-cormorant font-light italic text-[#2A1F14]/78 leading-relaxed"
+                  style={{ fontSize: "clamp(1.35rem, 3vw, 2.1rem)" }}
+                >
+                  We&rsquo;re getting married,
+                </motion.p>
+              </div>
+              <div className="overflow-hidden py-1">
+                <motion.p
+                  variants={timedFadeUp(0.34)}
+                  initial="hidden"
+                  animate={scene2Active ? "visible" : "hidden"}
+                  className="font-cormorant font-light italic text-[#2A1F14]/78 leading-relaxed"
+                  style={{ fontSize: "clamp(1.35rem, 3vw, 2.1rem)" }}
+                >
+                  and we&rsquo;d love you there.
+                </motion.p>
+              </div>
             </div>
           </motion.div>
 
